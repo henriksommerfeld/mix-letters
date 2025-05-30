@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦄</text></svg>"
+    />
+    <title>Blanda bokstäver</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        background-color: violet;
+        display: flex;
+        justify-content: center;
+        align-items: start;
+        min-height: 100%;
+        margin: 0;
+        padding: 0;
+        font-size: 1.2rem;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+          "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+          sans-serif;
+      }
+
+      main {
+        padding: 2em;
+        width: 100%;
+        max-width: 40em;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      h1 {
+        font-size: 2rem;
+      }
+
+      input {
+        font-family: monospace;
+        font-size: 1rem;
+        text-transform: uppercase;
+        padding: 0.5em;
+        border-radius: 0.5em;
+        text-align: center;
+        letter-spacing: 0.5em;
+        border: none;
+        width: 100%;
+      }
+
+      button {
+        width: 100%;
+        padding: 0.5em;
+        border-radius: 0.5em;
+      }
+
+      label {
+        text-align: center;
+      }
+
+      .group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+      }
+
+      .guess {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: monospace;
+        font-size: 1.2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5em;
+        padding: 1.5em 1.5em 1.5em 2em;
+        border-radius: 0.5em;
+        border: none;
+        width: 100%;
+        min-height: 5rem;
+      }
+
+      #scrambled-word {
+        background-color: black;
+        color: whitesmoke;
+      }
+
+      #guessed-word {
+        display: none;
+        background-color: antiquewhite;
+        color: black;
+        transition: all 150ms ease 0s;
+      }
+
+      #guessed-word.correct {
+        --success-bg: #4bb543;
+        transform: scale(1.05);
+        font-size: 1.5em;
+        background-color: oklch(from var(--success-bg) calc(l + 0.1) c h);
+        border: 2px solid oklch(from var(--success-bg) calc(l + 0.2) c h);
+        font-weight: 500;
+      }
+
+      #play,
+      #play-button,
+      #done {
+        display: none;
+      }
+
+      #done {
+        display: none;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+      }
+
+      .bravo {
+        text-align: center;
+        font-size: 2rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <main>
+      <h1>🦄 Blanda bokstäver</h1>
+      <div id="setup" class="group">
+        <label for="new-word">Skriv ditt ord här</label>
+        <input type="text" id="new-word" class="guess" />
+      </div>
+      <span>Det blandade ordet</span>
+      <div id="scrambled-word" class="guess"></div>
+      <button id="play-button" type="button" onclick="playClicked()">
+        Spela
+      </button>
+      <div id="play" class="group">
+        <span>Din gissning</span>
+        <input type="text" id="guessed-word" class="guess" />
+        <div id="done">
+          <span class="bravo"> Bravo! 👏 </span>
+          <button
+            id="play-again-button"
+            type="button"
+            onclick="window.location.href = ''"
+          >
+            Spela igen
+          </button>
+        </div>
+      </div>
+    </main>
+    <script>
+      function scramble(word, retries = 0) {
+        const letters = word.split("");
+        for (let index = letters.length - 1; 0 < index; index--) {
+          const randomIndex = Math.floor(Math.random() * (index + 1));
+          const currentLetter = letters[index];
+          letters[index] = letters[randomIndex];
+          letters[randomIndex] = currentLetter;
+        }
+        const scrambled = letters.join("");
+        return scrambled === word && word.length > 1 && retries < 2
+          ? scramble(word, retries + 1)
+          : scrambled;
+      }
+
+      // Elements
+      const newWordElement = document.querySelector("#new-word");
+      const guessWordElement = document.querySelector("#guessed-word");
+      const playButtonElement = document.querySelector("#play-button");
+      const playAgainButtonElement =
+        document.querySelector("#play-again-button");
+      const doneElement = document.querySelector("#done");
+
+      function startPlaying() {
+        document.querySelector("#play").style.setProperty("display", "flex");
+        playButtonElement.style.setProperty("display", "none");
+        guessWordElement.style.setProperty("display", "flex");
+        guessWordElement.focus();
+      }
+
+      function showSetup() {
+        document.querySelector("#setup").style.setProperty("display", "flex");
+      }
+
+      function hideSetup() {
+        document.querySelector("#setup").style.setProperty("display", "none");
+      }
+
+      function hidePlay() {
+        document.querySelector("#play").style.setProperty("display", "none");
+      }
+
+      function handleError(func) {
+        try {
+          func();
+        } catch (err) {
+          alert(err);
+        }
+      }
+
+      function playClicked() {
+        handleError(() => {
+          hideSetup();
+          startPlaying();
+        });
+      }
+
+      function launchConfetti() {
+        const triangle = confetti.shapeFromPath({
+          path: "M0 10 L5 0 L10 10z",
+        });
+        confetti({
+          shapes: [triangle],
+          scalar: 2,
+          particleCount: 100,
+        });
+      }
+
+      window.onload = function () {
+        newWordElement.value = "";
+        guessWordElement.value = "";
+      };
+
+      newWordElement.addEventListener("keydown", function onEvent(e) {
+        if (e.key === "Enter" && e.target.value !== "") {
+          playClicked();
+        }
+      });
+
+      newWordElement.addEventListener("keyup", function onEvent(e) {
+        handleError(() => {
+          const word = e.target.value.trim();
+          const scrambledWord = scramble(word);
+          document.querySelector("#scrambled-word").innerText = scrambledWord;
+          if (!word) {
+            playButtonElement.style.setProperty("display", "none");
+            return;
+          }
+          playButtonElement.style.setProperty("display", "block");
+        });
+      });
+
+      guessWordElement.addEventListener("keyup", function onEvent(e) {
+        handleError(() => {
+          const word = e.target.value.trim();
+          if (word === newWordElement.value.trim()) {
+            e.target.classList.add("correct");
+            e.target.setAttribute("disabled", true);
+            launchConfetti();
+            doneElement.style.setProperty("display", "flex");
+          }
+        });
+      });
+
+      playAgainButtonElement.addEventListener("click", function onEvent(e) {
+        handleError(() => {
+          const word = e.target.value.trim();
+          if (word === newWordElement.value.trim()) {
+            guessWordElement.style.setProperty(
+              "background-color",
+              "yellowgreen",
+            );
+            guessWordElement.setAttribute("disabled", true);
+            doneElement.style.setProperty("display", "none");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
