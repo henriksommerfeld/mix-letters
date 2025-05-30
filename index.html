@@ -260,23 +260,8 @@
           const word = e.target.value.trim();
           if (word === newWordElement.value.trim()) {
             e.target.classList.add("correct");
-            e.target.setAttribute("disabled", true);
             launchConfetti();
             doneElement.style.setProperty("display", "flex");
-          }
-        });
-      });
-
-      playAgainButtonElement.addEventListener("click", function onEvent(e) {
-        handleError(() => {
-          const word = e.target.value.trim();
-          if (word === newWordElement.value.trim()) {
-            guessWordElement.style.setProperty(
-              "background-color",
-              "yellowgreen",
-            );
-            guessWordElement.setAttribute("disabled", true);
-            doneElement.style.setProperty("display", "none");
           }
         });
       });
