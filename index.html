@@ -257,8 +257,8 @@
 
       guessWordElement.addEventListener("keyup", function onEvent(e) {
         handleError(() => {
-          const word = e.target.value.trim();
-          if (word === newWordElement.value.trim()) {
+          const word = e.target.value.trim().toUpperCase();
+          if (word === newWordElement.value.trim().toUpperCase()) {
             e.target.classList.add("correct");
             launchConfetti();
             doneElement.style.setProperty("display", "flex");
