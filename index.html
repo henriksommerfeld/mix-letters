@@ -132,6 +132,10 @@
         text-align: center;
         font-size: 2rem;
       }
+
+      .used {
+        color: #4bb543;
+      }
     </style>
   </head>
 
@@ -140,7 +144,7 @@
       <h1>🦄 Blanda bokstäver</h1>
       <div id="setup" class="group">
         <label for="new-word">Skriv ditt ord här</label>
-        <input type="text" id="new-word" class="guess" />
+        <input type="text" id="new-word" class="guess" autocomplete="off" />
       </div>
       <span>Det blandade ordet</span>
       <div id="scrambled-word" class="guess"></div>
@@ -149,7 +153,7 @@
       </button>
       <div id="play" class="group">
         <span>Din gissning</span>
-        <input type="text" id="guessed-word" class="guess" />
+        <input type="text" id="guessed-word" class="guess" autocomplete="off" />
         <div id="done">
           <span class="bravo"> Bravo! 👏 </span>
           <button
@@ -162,6 +166,7 @@
         </div>
       </div>
     </main>
+
     <script>
       function scramble(word, retries = 0) {
         const letters = word.split("");
@@ -180,6 +185,7 @@
       // Elements
       const newWordElement = document.querySelector("#new-word");
       const guessWordElement = document.querySelector("#guessed-word");
+      const scrambledWordElement = document.querySelector("#scrambled-word");
       const playButtonElement = document.querySelector("#play-button");
       const playAgainButtonElement =
         document.querySelector("#play-again-button");
@@ -230,6 +236,39 @@
         });
       }
 
+      function usedIndexes(scrambledWord, suggestion) {
+        const scrambledLetters = scrambledWord.toUpperCase().split("");
+        const suggestedLetters = suggestion.toUpperCase().split("");
+        const matchingMap = new Map(
+          scrambledLetters.map((s) => [s, new Array()]),
+        );
+
+        for (const currentLetter of suggestedLetters) {
+          const existingIndexes = matchingMap.get(currentLetter) ?? new Array();
+          const matchingCriteria = (existingIndexes.at(-1) ?? -1) + 1;
+          const matchingIndex = scrambledLetters.indexOf(
+            currentLetter,
+            matchingCriteria,
+          );
+
+          if (matchingIndex > -1) {
+            matchingMap.set(currentLetter, [...existingIndexes, matchingIndex]);
+          }
+        }
+        return matchingMap;
+      }
+
+      function renderScrambled(scrambledWord, matches) {
+        return window.scrambledWord
+          .split("")
+          .map((l, index) =>
+            matches.get(l)?.includes(index)
+              ? `<span class="used">${l}</span>`
+              : `<span>${l}</span>`,
+          )
+          .join("");
+      }
+
       window.onload = function () {
         newWordElement.value = "";
         guessWordElement.value = "";
@@ -244,12 +283,12 @@
       newWordElement.addEventListener("keyup", function onEvent(e) {
         handleError(() => {
           const word = e.target.value.trim();
-          const scrambledWord = scramble(word);
-          document.querySelector("#scrambled-word").innerText = scrambledWord;
           if (!word) {
             playButtonElement.style.setProperty("display", "none");
             return;
           }
+          window.scrambledWord = scramble(word.toUpperCase());
+          scrambledWordElement.innerHTML = window.scrambledWord;
           playButtonElement.style.setProperty("display", "block");
         });
       });
@@ -257,6 +296,10 @@
       guessWordElement.addEventListener("keyup", function onEvent(e) {
         handleError(() => {
           const word = e.target.value.trim().toUpperCase();
+          const lettersUsedMap = usedIndexes(window.scrambledWord, word)
+          const scrambledHtml = renderScrambled(window.scrambledWord, lettersUsedMap)
+          scrambledWordElement.innerHTML = scrambledHtml;
+
           if (word === newWordElement.value.trim().toUpperCase()) {
             e.target.classList.add("correct");
             launchConfetti();
