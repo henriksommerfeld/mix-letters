@@ -302,6 +302,7 @@
 
           if (word === newWordElement.value.trim().toUpperCase()) {
             e.target.classList.add("correct");
+            e.target.setAttribute('disabled', true);
             launchConfetti();
             doneElement.style.setProperty("display", "flex");
           }
