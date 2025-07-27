@@ -173,7 +173,11 @@
         letters[randomIndex] = currentLetter;
       }
       const scrambled = letters.join("");
-      return scrambled === word && word.length > 1 && retries < 2
+      const shouldRescramble =
+        scrambled === word ||
+        scrambled.startsWith(" ") ||
+        scrambled.endsWith(" ");
+      return shouldRescramble && word.length > 1 && retries < 2
         ? scramble(word, retries + 1)
         : scrambled;
     }
@@ -254,13 +258,26 @@
       return matchingMap;
     }
 
+    function htmlEncode(letter) {
+      return (
+        {
+          " ": "&nbsp;",
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        }[letter] ?? letter
+      );
+    }
+
     function renderScrambled(scrambledWord, matches) {
       return window.scrambledWord
         .split("")
         .map((l, index) =>
           matches.get(l)?.includes(index)
-            ? `<span class="used">${l}</span>`
-            : `<span>${l}</span>`,
+            ? `<span class="used">${htmlEncode(l)}</span>`
+            : `<span>${htmlEncode(l)}</span>`,
         )
         .join("");
     }
@@ -281,20 +298,26 @@
         const word = e.target.value.trim();
         window.scrambledWord = scramble(word.toUpperCase());
         scrambledWordElement.innerHTML = window.scrambledWord;
-        playButtonElement.style.setProperty("display", word ? "block" : "none");
+        playButtonElement.style.setProperty(
+          "display",
+          word ? "block" : "none",
+        );
       });
     });
 
     guessWordElement.addEventListener("keyup", function onEvent(e) {
       handleError(() => {
         const word = e.target.value.trim().toUpperCase();
-        const lettersUsedMap = usedIndexes(window.scrambledWord, word)
-        const scrambledHtml = renderScrambled(window.scrambledWord, lettersUsedMap)
+        const lettersUsedMap = usedIndexes(window.scrambledWord, word);
+        const scrambledHtml = renderScrambled(
+          window.scrambledWord,
+          lettersUsedMap,
+        );
         scrambledWordElement.innerHTML = scrambledHtml;
 
         if (word === newWordElement.value.trim().toUpperCase()) {
           e.target.classList.add("correct");
-          e.target.setAttribute('disabled', true);
+          e.target.setAttribute("disabled", true);
           launchConfetti();
           doneElement.style.setProperty("display", "flex");
         }
